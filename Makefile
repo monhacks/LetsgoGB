@@ -1,10 +1,20 @@
-PYTHON := python
+PYTHON := python2
 MD5 := md5sum -c --quiet
 
 2bpp     := $(PYTHON) extras/pokemontools/gfx.py 2bpp
 1bpp     := $(PYTHON) extras/pokemontools/gfx.py 1bpp
 pic      := $(PYTHON) extras/pokemontools/pic.py compress
 includes := $(PYTHON) extras/pokemontools/scan_includes.py
+
+ifneq ($(wildcard rgbds/*),)
+RGBDS ?= rgbds
+else
+RGBDS ?= 
+endif
+RGBASM ?= $(RGBDS)/rgbasm
+RGBFIX ?= $(RGBDS)/rgbfix
+RGBGFX ?= $(RGBDS)/rgbgfx
+RGBLNK ?= $(RGBDS)/rgblink
 
 LetsGoEeveeGB_obj := audio_red.o main_red.o text_red.o wram_red.o
 LetsGoPikachuGB_obj := audio_blue.o main_blue.o text_blue.o wram_blue.o
@@ -34,18 +44,18 @@ clean:
 
 %_red.o: dep = $(shell $(includes) $(@D)/$*.asm)
 $(LetsGoEeveeGB_obj): %_red.o: %.asm $$(dep)
-	rgbasm -D _RED -h -o $@ $*.asm
+	$(RGBASM) -D _RED -h -o $@ $*.asm
 
 %_blue.o: dep = $(shell $(includes) $(@D)/$*.asm)
 $(LetsGoPikachuGB_obj): %_blue.o: %.asm $$(dep)
-	rgbasm -D _BLUE -h -o $@ $*.asm
+	$(RGBASM) -D _BLUE -h -o $@ $*.asm
 
 LetsGoEeveeGB_opt  = -jsv -k 01 -l 0x33 -m 0x13 -p 0 -r 03 -t "LETSGOGBEEVEE"
 LetsGoPikachuGB_opt = -jsv -k 01 -l 0x33 -m 0x13 -p 0 -r 03 -t "LETSGOGBPIKA"
 
 %.gbc: $$(%_obj)
-	rgblink -n $*.sym -l pokered.link -o $@ $^
-	rgbfix $($*_opt) $@
+	$(RGBLNK) -n $*.sym -l pokered.link -o $@ $^
+	$(RGBFIX) $($*_opt) $@
 	sort $*.sym -o $*.sym
 
 %.png:  ;
